@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from app.services.catalog_faker import CatalogItemGenerator
 
 router = APIRouter()
 
@@ -11,6 +12,14 @@ async def read_items():
 @router.get("/{item_id}")
 async def read_item(item_id: str):
     return {"name": "Fake Specific Item", "item_id": item_id}
+
+
+@router.get("/random/{count}")
+async def fake_catalogs(count: int):
+    if count < 1:
+        raise HTTPException(status_code=403, detail="Count must be positive")
+    generator = CatalogItemGenerator()
+    return [generator.catalog_item() for _ in range(count)]
 
 
 @router.put(
