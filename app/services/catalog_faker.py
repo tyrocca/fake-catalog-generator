@@ -68,7 +68,7 @@ class CatalogItemGenerator(Faker):
 
     @property
     def _product_title(self) -> str:
-        color = self.color()
+        color = self.color_name()
         career = self.job()
         name = self.name()
         return f"{color} {self._product} for a {career} | Designed by: {name}"
@@ -82,11 +82,22 @@ class CatalogItemGenerator(Faker):
         """Return 0 33% or a random int"""
         return random.randint(0, 3) or random.randint(1, 999)
 
+    @property
+    def _categories(self) -> List[str]:
+        return (
+            'Fall'
+            'Toys',
+            'Automotive',
+            'January',
+        )
+
+
     # create new provider class
     def catalog_item(self, *, inventory_policy: int = 0) -> Dict[str, Any]:
         product_id = str(ulid.new())
         url = f"{self.url()}{product_id}"
-        image = f"{url}.jpg"
+        imgsize = random.randint(128, 1080)
+        image = f"https://picsum.photos/{imgsize}"
         return {
             "id": product_id,
             "title": self._product_title,
@@ -96,7 +107,7 @@ class CatalogItemGenerator(Faker):
             "image_link": image,
             "inventory_policy": inventory_policy,
             "inventory_quantity": self._inventory_quantity,
-            "categories": [],
+            "categories": self._categories,
             **self._address,
         }
 
