@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import Dict, Any, Optional, List
 
 from .cities import ADDRESS_DICT
+from .data import CATEGORIES
 
 
 ALTERABLE_FIELDS = {
@@ -35,7 +36,6 @@ class CatalogItem(BaseModel):
 
 
 class CatalogItemGenerator(Faker):
-
     _FAKE_PRODUCTS = (
         "t-shirt",
         "pants",
@@ -84,13 +84,7 @@ class CatalogItemGenerator(Faker):
 
     @property
     def _categories(self) -> List[str]:
-        return (
-            'Fall'
-            'Toys',
-            'Automotive',
-            'January',
-        )
-
+        return random.sample(CATEGORIES, random.randint(0, len(CATEGORIES)))
 
     # create new provider class
     def catalog_item(self, *, inventory_policy: int = 0) -> Dict[str, Any]:

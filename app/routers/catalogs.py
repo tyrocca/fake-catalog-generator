@@ -22,6 +22,23 @@ async def fake_catalogs(count: int):
     return [generator.catalog_item() for _ in range(count)]
 
 
+_cached_result = []
+def get_cache():
+    return _cached_result
+
+
+@router.get("/random-cached/{count}")
+async def fake_catalogs(count: int):
+    if count < 1:
+        raise HTTPException(status_code=403, detail="Count must be positive")
+    _cached_result = get_cache()
+    if len(_cached_result) < count:
+        to_gen = count - len(_cached_result)
+        generator = CatalogItemGenerator()
+        _cached_result += [generator.catalog_item() for _ in range(to_gen)]
+
+    return _cached_result[:count]
+
 @router.put(
     "/{item_id}",
     tags=["custom"],
