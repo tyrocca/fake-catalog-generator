@@ -1,8 +1,8 @@
 from faker import Faker
 import ulid
 import random
-from pydantic import BaseModel
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
+from app.models import CategoryMembership, CatalogItem
 
 from .cities import ADDRESS_DICT
 from .data import CATEGORIES
@@ -23,18 +23,6 @@ ALTERABLE_FIELDS = {
 FIELD_OPTIONS = list(ALTERABLE_FIELDS.keys())
 
 
-class CatalogItem(BaseModel):
-    id: str
-    title: str
-    link: str
-    description: str
-    price: float
-    image_link: str
-    inventory_policy: int
-    inventory_quantity: int
-    categories: List[str]
-
-
 class CatalogItemGenerator(Faker):
     _FAKE_PRODUCTS = (
         "t-shirt",
@@ -49,6 +37,13 @@ class CatalogItemGenerator(Faker):
         "desk lamp",
         "pot",
         "chariot",
+    )
+
+    _MUTABLE_FIELDS: Tuple[Tuple[str, str], ...] = (
+        ("title", "_product_title"),
+        ("description", "_product_description"),
+        ("inventory_quantity", "_inventory_quantity"),
+        ("categories", "_categories"),
     )
 
     @property
@@ -105,11 +100,16 @@ class CatalogItemGenerator(Faker):
             **self._address,
         }
 
+    def alter_catalog_dict(self) -> Dict[str, Any]:
+        updated_props: List[Tuple[str, str]] = random.sample(
+            self._MUTABLE_FIELDS, random.randint(0, len(self._MUTABLE_FIELDS))
+        )
+        return {attr: getattr(self, method) for attr, method in updated_props}
+
     def alter_catalog_item(self, catalog_item: CatalogItem):
-        attr = random.choice(("product_description", "inventory_quantity", "title"))
+        update_dict = self.alter_catalog_dict()
 
-        # new_prop = getattr(catalog_item
+        for attr, value in update_dict.items():
+            setattr(catalog_item, attr, value)
 
-        # catalog_item.
-
-        return
+        return catalog_item
