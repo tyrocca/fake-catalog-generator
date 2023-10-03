@@ -1,1 +1,7 @@
-from .base import CatalogCategory, CatalogItem, CatalogVariant, CategoryMembership
+from .base import (
+    CatalogCategory,
+    CatalogItem,
+    CatalogVariant,
+    CategoryMembership,
+    CatalogEntity,
+)

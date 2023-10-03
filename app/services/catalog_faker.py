@@ -1,8 +1,9 @@
 from faker import Faker
 import ulid
+import mmh3
 import random
-from typing import Dict, Any, Optional, List, Tuple
-from app.models import CategoryMembership, CatalogItem
+from typing import Dict, Any, Optional, List, Tuple, Union
+from app.models.base import CatalogCategory, CatalogEntity, CatalogVariant, CatalogItem
 
 from .cities import ADDRESS_DICT
 from .data import CATEGORIES
@@ -81,8 +82,8 @@ class CatalogItemGenerator(Faker):
     def _categories(self) -> List[str]:
         return random.sample(CATEGORIES, random.randint(0, len(CATEGORIES)))
 
-    # create new provider class
-    def catalog_item(self, *, inventory_policy: int = 0) -> Dict[str, Any]:
+    @property
+    def _base_catalog_dict(self) -> Dict[str, Union[int, str, float]]:
         product_id = str(ulid.new())
         url = f"{self.url()}{product_id}"
         imgsize = random.randint(128, 1080)
@@ -94,11 +95,53 @@ class CatalogItemGenerator(Faker):
             "description": self._product_description,
             "price": random.randint(1, 2000) / 100,
             "image_link": image,
-            "inventory_policy": inventory_policy,
+            "inventory_policy": 0,  # default
             "inventory_quantity": self._inventory_quantity,
-            "categories": self._categories,
-            **self._address,
         }
+
+    # create new provider class
+    def catalog_item(self, *, with_address: bool = True) -> Dict[str, Any]:
+        return {
+            "categories": self._categories,
+            **self._base_catalog_dict,
+            **(self._address if with_address else {}),
+        }
+
+    ################################################################################
+    ########################## Full Object Manipulations ###########################
+    ################################################################################
+
+    def get_categories(
+        self, names: Optional[List[str]] = None
+    ) -> List[CatalogCategory]:
+        cat_names = self._categories if names is None else names
+        return [
+            CatalogCategory(id=f"{mmh3.hash(cat,signed=False)}", name=cat)
+            for cat in cat_names
+        ]
+
+    def get_variants(self, item_pk: str, variant_ids=None) -> List[CatalogVariant]:
+        num_variants = random.randint(0, 100)
+        return [
+            CatalogVariant(catalog_item_id=item_pk, **self._base_catalog_dict)
+            for _ in range(num_variants)
+        ]
+
+    def get_catalog_item(self) -> CatalogItem:
+        return CatalogItem(**self.catalog_item(with_address=False))
+
+    def get_catalog_entity(self) -> CatalogEntity:
+        item = self.get_catalog_item()
+        categories = self.get_categories(item.categories)
+        return CatalogEntity(
+            item=item,
+            variants=self.get_variants(item.id),
+            categories=categories,
+        )
+
+    ################################################################################
+    ############################### Mutation Helpers ###############################
+    ################################################################################
 
     def alter_catalog_dict(self) -> Dict[str, Any]:
         updated_props: List[Tuple[str, str]] = random.sample(

@@ -1,9 +1,9 @@
-from abc import ABCMeta
+from abc import ABC
 from typing import List, Optional
 from app.services.catalog_faker import CatalogItem, CatalogVariant, CatalogCategory
 
 
-class BaseRepository(ABCMeta):
+class BaseRepository(ABC):
     ################################################################################
     ################################# CatalogItem ##################################
     ################################################################################
@@ -50,7 +50,7 @@ class BaseRepository(ABCMeta):
     def get_category(self, pk: str) -> CatalogCategory:
         ...
 
-    def get_categorys(self, pk: str) -> List[CatalogCategory]:
+    def get_categories(self, pk: str) -> List[CatalogCategory]:
         ...
 
     def update_category(self, pk: str, record: CatalogCategory) -> int:
@@ -61,5 +61,3 @@ class BaseRepository(ABCMeta):
 
     def list_categories(self, cursor: Optional[str]) -> List[CatalogCategory]:
         ...
-
-

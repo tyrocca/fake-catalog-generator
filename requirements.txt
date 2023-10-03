@@ -4,6 +4,7 @@ click==7.1.2
 decorator==4.4.2
 Faker==4.1.3
 fastapi==0.61.1
+mmh3
 h11==0.9.0
 httptools==0.1.1
 ipython==7.18.1
