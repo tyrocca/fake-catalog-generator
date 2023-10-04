@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 import mmh3
 
 
@@ -12,7 +12,7 @@ class CatalogItem(BaseModel):
     image_link: str
     inventory_policy: int
     inventory_quantity: int
-    categories: List[str]
+    categories: Optional[List[str]]
 
 
 class CatalogVariant(BaseModel):

@@ -44,7 +44,7 @@ class CatalogItemGenerator(Faker):
         ("title", "_product_title"),
         ("description", "_product_description"),
         ("inventory_quantity", "_inventory_quantity"),
-        ("categories", "_categories"),
+        # ("categories", "_categories"),
     )
 
     @property
@@ -100,10 +100,12 @@ class CatalogItemGenerator(Faker):
         }
 
     # create new provider class
-    def catalog_item(self, *, with_address: bool = True) -> Dict[str, Any]:
+    def catalog_item(
+        self, *, with_address: bool = True, with_categories: bool = True
+    ) -> Dict[str, Any]:
         return {
-            "categories": self._categories,
             **self._base_catalog_dict,
+            **({"categories": self._categories} if with_categories else {}),
             **(self._address if with_address else {}),
         }
 
@@ -128,11 +130,13 @@ class CatalogItemGenerator(Faker):
         ]
 
     def get_catalog_item(self) -> CatalogItem:
-        return CatalogItem(**self.catalog_item(with_address=False))
+        return CatalogItem(
+            **self.catalog_item(with_address=False, with_categories=False)
+        )
 
     def get_catalog_entity(self) -> CatalogEntity:
         item = self.get_catalog_item()
-        categories = self.get_categories(item.categories)
+        categories = self.get_categories()
         return CatalogEntity(
             item=item,
             variants=self.get_variants(item.id),
