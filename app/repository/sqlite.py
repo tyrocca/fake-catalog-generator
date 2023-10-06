@@ -5,8 +5,8 @@ from app.models.base import (
     CatalogEntity,
     CategoryMembership,
 )
-from typing import List, Any, Tuple, Optional
-from .base import BaseRepository
+from typing import Iterable, List, Any, ParamSpec, Tuple, Optional, Type
+from .base import BaseRepository, QueryCursor, Sort
 import sqlite3
 
 
@@ -139,6 +139,8 @@ SELECT * FROM catalogmembership WHERE category_id = ?
 
 
 class SQLiteRepository(BaseRepository):
+    PAGE_SIZE = 1000
+
     def __init__(self, dbname: str = ":memory:"):
         self._db_name = dbname
         self._cursor = None
@@ -218,8 +220,42 @@ class SQLiteRepository(BaseRepository):
             ),
         )
 
-    def list_items(self, cursor: Optional[str]) -> List[CatalogItem]:
-        ...
+    def list_items(
+        self,
+        cursor: Optional[QueryCursor] = QueryCursor(sort=Sort.ID_ASC, next_id=""),
+        limit: Optional[int] = None,
+    ) -> Iterable[CatalogItem]:
+        return self._list_helper(
+            table="catalogitem",
+            out_type=CatalogItem,
+            cursor=cursor,
+            limit=limit,
+        )
+
+    ################################################################################
+    ################################# SQL Helpers ##################################
+    ################################################################################
+
+    def _list_helper(
+        self, table: str, out_type: Type, cursor: QueryCursor, limit: Optional[int]
+    ) -> Iterable[Type]:
+        num_returned = 0
+        while True:
+            request_size = min(limit or self.PAGE_SIZE, self.PAGE_SIZE)
+            self.cursor.execute(
+                f"""SELECT * FROM {table} WHERE id > ? {cursor.sort.value} LIMIT ?""",
+                [cursor.next_id, request_size],
+            )
+            results = [out_type(**r) for r in self.cursor.fetchall()]
+            if not results:
+                break
+
+            for r in results:
+                num_returned += 1
+                yield r
+                if limit and num_returned == limit:
+                    return
+            cursor = QueryCursor(sort=cursor.sort, next_id=results[-1].id)
 
     ################################################################################
     ################################ CatalogVariant ################################
@@ -268,7 +304,12 @@ class SQLiteRepository(BaseRepository):
         )
 
     def list_variants(self, cursor: Optional[str]) -> List[CatalogVariant]:
-        ...
+        return self._list_helper(
+            table="catalogvariant",
+            out_type=CatalogVariant,
+            cursor=cursor,
+            limit=limit,
+        )
 
     ################################################################################
     ############################### CatalogCategory ################################
@@ -309,9 +350,8 @@ g.alter_catalog_item(i)
 
 r.update_item(i)
 
-# def function make_items(num):
-#     for _ in range(num):
-#         i = g.g
-#         r.create_item(
+items = [g.get_catalog_item() for _ in range(1000)]
+
+r.create_items(items)
 
 """

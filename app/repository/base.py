@@ -1,6 +1,21 @@
 from abc import ABC
 from typing import List, Optional
+from enum import Enum, unique
+from dataclasses import dataclass
 from app.services.catalog_faker import CatalogItem, CatalogVariant, CatalogCategory
+
+class Sort(Enum):
+    ID_DESC = "ORDER BY id DESC"
+    ID_ASC = "ORDER BY id ASC"
+    CREATED_LATEST = "ORDER BY id DESC";
+    CREATED_EARLIEST = "ORDER BY id ASC";
+    UPDATED_LATEST = "ORDER BY id DESC";
+    UPDATED_EARLIEST = "ORDER BY id ASC";
+
+@dataclass
+class QueryCursor:
+    sort: Sort
+    next_id: Optional[str]
 
 
 class BaseRepository(ABC):
