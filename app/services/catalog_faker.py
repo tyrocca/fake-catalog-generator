@@ -153,10 +153,24 @@ class CatalogItemGenerator(Faker):
         )
         return {attr: getattr(self, method) for attr, method in updated_props}
 
-    def alter_catalog_item(self, catalog_item: CatalogItem):
+    def alter_catalog_item(self, catalog_item: CatalogItem) -> CatalogItem:
         update_dict = self.alter_catalog_dict()
 
         for attr, value in update_dict.items():
             setattr(catalog_item, attr, value)
 
         return catalog_item
+
+    def alter_catalog_variant(self, catalog_variant: CatalogVariant) -> CatalogVariant:
+        update_dict = self.alter_catalog_dict()
+        for attr, value in update_dict.items():
+            setattr(catalog_variant, attr, value)
+
+        return catalog_variant
+
+    def alter_catalog_entity(self, catalog_entity: CatalogEntity) -> CatalogEntity:
+        return CatalogEntity(
+            item=self.alter_catalog_item(catalog_entity.item),
+            variants=[self.alter_catalog_variant(v) for v in catalog_entity.variants],
+            categories=self.get_categories(),
+        )

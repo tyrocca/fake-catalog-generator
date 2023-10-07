@@ -33,7 +33,7 @@ class CatalogCategory(BaseModel):
 
 
 class CategoryMembership(BaseModel):
-    id: int
+    id: str
     catalog_item_id: str
     category_id: str
 
@@ -43,23 +43,29 @@ class CatalogEntity:
     item: CatalogItem
     variants: List[CatalogVariant]
     categories: List[CatalogCategory]
-    memberships: List[CategoryMembership]
+    memberships: Optional[List[CategoryMembership]]
 
     def __init__(
         self,
         item: CatalogItem,
         variants: List[CatalogVariant],
         categories: List[CatalogCategory],
+        memberships: Optional[List[CategoryMembership]] = None,
     ):
         self.key = item.id
         self.item = item
         self.variants = variants
         self.categories = categories
-        self.memberships = [
-            CategoryMembership(
-                id=mmh3.hash(f"{self.key}::{cat.id}", signed=False),
-                catalog_item_id=self.item.id,
-                category_id=cat.id,
-            )
-            for cat in self.categories
-        ]
+        self.memberships = memberships
+
+    def get_memberships(self) -> List[CategoryMembership]:
+        if self.categories and self.memberships is None:
+            self.memberships = [
+                CategoryMembership(
+                    id=mmh3.hash(f"{self.key}::{cat.id}", signed=False),
+                    catalog_item_id=self.item.id,
+                    category_id=cat.id,
+                )
+                for cat in self.categories
+            ]
+        return self.memberships or []
