@@ -355,7 +355,7 @@ class SQLiteRepository(BaseRepository):
     def create_category(self, record: CatalogCategory) -> bool:
         return self._create_helper(CREATE_CATEGORY_SQL, record)
 
-    def create_categories(self, records: CatalogCategory) -> bool:
+    def create_categories(self, records: List[CatalogCategory]) -> bool:
         return self._creates_helper(CREATE_CATEGORY_SQL, records)
 
     def get_category(self, pk: str) -> CatalogCategory:
@@ -460,6 +460,28 @@ class SQLiteRepository(BaseRepository):
         self.patch_membership(catalog_entity.key, catalog_entity.get_memberships())
         return True
 
+    def _entity_bulk_helper(
+        self, catalog_entities: List[CatalogEntity]
+    ) -> Tuple[List[CatalogItem], List[CatalogVariant], List[CatalogCategory]]:
+        items = []
+        variants = []
+        categories: Dict[str, CatalogCategory] = {}
+        for entity in catalog_entities:
+            items.append(entity.item)
+            variants += entity.variants
+            for cat in entity.categories:
+                categories[cat.id] = cat
+        return items, variants, categories.values()
+
+    def create_catalog_entities(self, catalog_entities: List[CatalogEntity]) -> int:
+        new_items, new_variants, new_cats = self._entity_bulk_helper(catalog_entities)
+        self.create_items(new_items)
+        self.create_variants(new_variants)
+        self.create_categories(new_cats)
+        for c in catalog_entities:
+            self.patch_membership(c.id, c.get_memberships())
+        return len(new_items)
+
     def update_catalog_entity(self, catalog_entity: CatalogEntity) -> int:
         self.update_item(catalog_entity.item)
         self.update_variants(catalog_entity.variants)
@@ -482,6 +504,14 @@ class SQLiteRepository(BaseRepository):
         self.patch_categories(list(categories.values()))
 
         return items_updated + variants_updated
+
+    def list_entities(
+        self,
+        cursor: Optional[QueryCursor] = QueryCursor(sort=Sort.ID_ASC, next_id=""),
+        limit: Optional[int] = None,
+    ) -> Iterable[CatalogEntity]:
+        for item in self.list_items(cursor, limit):
+            yield self._hydrate_entity(item)
 
 
 """
@@ -511,5 +541,10 @@ print('cats', len(e_read.categories))
 
 e_new = g.alter_catalog_entity(e)
 r.update_catalog_entity(e_new)
+
+objs = [g.get_catalog_entity() for _ in range(10000)]
+r.create_catalog_enetites[
+
+
 
 """
